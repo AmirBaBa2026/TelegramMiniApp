@@ -37,8 +37,11 @@ button:disabled { background: #ccc; cursor: not-allowed; }
 </div>
 </div>
 <script>
-var SERVER_URL = "http://localhost:5001";
+// تنظیمات JSONBin
+var JSONBIN_API_KEY = "";
+var JSONBIN_URL = "https://api.jsonbin.io/v3/b/YOUR_BIN_ID/latest";
 var userId = window.Telegram.WebApp.initDataUnsafe.user.id;
+
 var qs=[
   {q:'پایتخت ایران کجاست؟',o:['تهران','مشهد','اصفهان','شیراز'],c:0},
   {q:'۱+۱ چند میشه؟',o:['۱','۲','۳','۴'],c:1},
@@ -53,13 +56,14 @@ var se=document.getElementById('sc');
 var su=document.getElementById('sub');
 var ne=document.getElementById('nxt');
 
-// دریافت امتیاز از سرور
-fetch(SERVER_URL + '/get_score/' + userId)
+// دریافت امتیاز از JSONBin
+fetch(JSONBIN_URL, {headers: {"X-Master-Key": JSONBIN_API_KEY}})
   .then(response => response.json())
   .then(data => {
-    sc = data.score || 0;
+    sc = (data.scores && data.scores[userId]) || 0;
     se.textContent = sc;
-  });
+  })
+  .catch(e => console.log("Error loading score:", e));
 
 function u(){
   var q=qs[cq];
@@ -95,9 +99,22 @@ function ca(){
     sc+=10;
     fe.className='fb cor';
     fe.textContent='✅ درست بود! +10 امتیاز';
-    // آپدیت امتیاز در سرور
-    fetch(SERVER_URL + '/update_score/' + userId + '/10', {method: 'POST'})
-      .catch(e => console.log(e));
+    // آپدیت امتیاز در JSONBin
+    fetch(JSONBIN_URL, {headers: {"X-Master-Key": JSONBIN_API_KEY}})
+      .then(response => response.json())
+      .then(data => {
+        if(!data.scores) data.scores = {};
+        data.scores[userId] = (data.scores[userId] || 0) + 10;
+        return fetch(JSONBIN_URL, {
+          method: 'PUT',
+          headers: {
+            "X-Master-Key": JSONBIN_API_KEY,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(data)
+        });
+      })
+      .catch(e => console.log("Error updating score:", e));
   } else {
     fe.className='fb inc';
     fe.textContent='❌ غلط بود!';
@@ -119,9 +136,22 @@ function nq(){
     fe.style.display='block';
     su.style.display='none';
     ne.style.display='none';
-    // آپدیت امتیاز نهایی در سرور
-    fetch(SERVER_URL + '/update_score/' + userId + '/' + sc, {method: 'POST'})
-      .catch(e => console.log(e));
+    // آپدیت امتیاز نهایی در JSONBin
+    fetch(JSONBIN_URL, {headers: {"X-Master-Key": JSONBIN_API_KEY}})
+      .then(response => response.json())
+      .then(data => {
+        if(!data.scores) data.scores = {};
+        data.scores[userId] = sc;
+        return fetch(JSONBIN_URL, {
+          method: 'PUT',
+          headers: {
+            "X-Master-Key": JSONBIN_API_KEY,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(data)
+        });
+      })
+      .catch(e => console.log("Error updating score:", e));
     return;
   }
   u();
