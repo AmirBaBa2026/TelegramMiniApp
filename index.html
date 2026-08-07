@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مینی‌اپ تلگرام</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+body { font-family: Arial; background: #f0f2f5; margin: 0; padding: 20px; text-align: center; }
+h1 { color: #007bff; }
+button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+</style>
+</head>
+<body>
+<h1>🎮 مینی‌اپ تلگرام</h1>
+<p>به مینی‌اپ خوش آمدید!</p>
+<button onclick="sendData()">ارسال داده به ربات</button>
+
+<script>
+function sendData() {
+    window.Telegram.WebApp.sendData(JSON.stringify({
+        action: "test",
+        message: "سلام از مینی‌اپ!"
+    }));
+}
+window.Telegram.WebApp.expand();
+</script>
+</body>
+</html>
