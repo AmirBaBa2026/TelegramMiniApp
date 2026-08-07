@@ -1,28 +1,135 @@
 <!DOCTYPE html>
-<html>
+<html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>مینی‌اپ تلگرام</title>
+<title>بازی سوال و جواب</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
-body { font-family: Arial; background: #f0f2f5; margin: 0; padding: 20px; text-align: center; }
-h1 { color: #007bff; }
-button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+body { font-family: Arial; background: #f0f2f5; margin: 0; padding: 20px; }
+.c { max-width: 500px; margin: 0 auto; background: white; border-radius: 10px; padding: 20px; }
+h1 { text-align: center; color: #007bff; }
+.q { text-align: center; margin: 20px 0; font-size: 18px; }
+.o { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.op { background: #eee; padding: 12px; border-radius: 8px; text-align: center; cursor: pointer; }
+.op:hover { background: #ddd; }
+.op.sel { background: #007bff; color: white; }
+.ctr { text-align: center; margin: 20px 0; }
+button { padding: 10px 20px; margin: 0 5px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+.sub { background: #28a745; color: white; }
+.nxt { background: #007bff; color: white; }
+button:disabled { background: #ccc; cursor: not-allowed; }
+.fb { margin: 15px 0; text-align: center; padding: 8px; border-radius: 5px; }
+.cor { background: #d4edda; color: #155724; }
+.inc { background: #f8d7da; color: #721c24; }
 </style>
 </head>
 <body>
-<h1>🎮 مینی‌اپ تلگرام</h1>
-<p>به مینی‌اپ خوش آمدید!</p>
-<button onclick="sendData()">ارسال داده به ربات</button>
-
+<div class="c">
+<h1>🎮 بازی سوال و جواب</h1>
+<div class="q" id="q">در حال بارگذاری...</div>
+<div class="o" id="o"></div>
+<div class="fb" id="fb"></div>
+<div>امتیاز: <span id="sc">0</span></div>
+<div class="ctr">
+<button class="sub" id="sub" disabled>تایید جواب</button>
+<button class="nxt" id="nxt" style="display:none">سوال بعدی</button>
+</div>
+</div>
 <script>
-function sendData() {
-    window.Telegram.WebApp.sendData(JSON.stringify({
-        action: "test",
-        message: "سلام از مینی‌اپ!"
-    }));
+var SERVER_URL = "http://localhost:5001";
+var userId = window.Telegram.WebApp.initDataUnsafe.user.id;
+var qs=[
+  {q:'پایتخت ایران کجاست؟',o:['تهران','مشهد','اصفهان','شیراز'],c:0},
+  {q:'۱+۱ چند میشه؟',o:['۱','۲','۳','۴'],c:1},
+  {q:'رنگ آسمان چیست؟',o:['سبز','آبی','قرمز','زرد'],c:1},
+  {q:'بزرگترین سیاره؟',o:['زمین','مریخ','مشتری','زحل'],c:2}
+];
+var cq=0,sc=0,sa=null,an=false;
+var qe=document.getElementById('q');
+var oe=document.getElementById('o');
+var fe=document.getElementById('fb');
+var se=document.getElementById('sc');
+var su=document.getElementById('sub');
+var ne=document.getElementById('nxt');
+
+// دریافت امتیاز از سرور
+fetch(SERVER_URL + '/get_score/' + userId)
+  .then(response => response.json())
+  .then(data => {
+    sc = data.score || 0;
+    se.textContent = sc;
+  });
+
+function u(){
+  var q=qs[cq];
+  qe.textContent=q.q;
+  oe.innerHTML='';
+  q.o.forEach(function(o,i){
+    var e=document.createElement('div');
+    e.className='op';
+    e.textContent=o;
+    e.onclick=function(){
+      document.querySelectorAll('.op').forEach(function(x){x.classList.remove('sel');});
+      e.classList.add('sel');
+      sa=i;
+      su.disabled=false;
+    };
+    oe.appendChild(e);
+  });
+  fe.className='fb';
+  fe.textContent='';
+  fe.style.display='none';
+  se.textContent=sc;
+  su.disabled=true;
+  ne.style.display='none';
+  an=false;
 }
+
+function ca(){
+  if(sa===null||an)return;
+  var q=qs[cq];
+  an=true;
+  var ic=sa===q.c;
+  if(ic){
+    sc+=10;
+    fe.className='fb cor';
+    fe.textContent='✅ درست بود! +10 امتیاز';
+    // آپدیت امتیاز در سرور
+    fetch(SERVER_URL + '/update_score/' + userId + '/10', {method: 'POST'})
+      .catch(e => console.log(e));
+  } else {
+    fe.className='fb inc';
+    fe.textContent='❌ غلط بود!';
+  }
+  fe.style.display='block';
+  se.textContent=sc;
+  su.disabled=true;
+  ne.style.display='inline-block';
+  window.Telegram.WebApp.sendData(JSON.stringify({action:'answer',correct:ic}));
+}
+
+function nq(){
+  cq++;
+  if(cq>=qs.length){
+    qe.textContent='🎉 بازی تموم شد!';
+    oe.innerHTML='';
+    fe.className='fb';
+    fe.textContent='امتیاز نهایی: '+sc;
+    fe.style.display='block';
+    su.style.display='none';
+    ne.style.display='none';
+    // آپدیت امتیاز نهایی در سرور
+    fetch(SERVER_URL + '/update_score/' + userId + '/' + sc, {method: 'POST'})
+      .catch(e => console.log(e));
+    return;
+  }
+  u();
+}
+
+su.onclick=ca;
+ne.onclick=nq;
+u();
 window.Telegram.WebApp.expand();
 </script>
 </body>
