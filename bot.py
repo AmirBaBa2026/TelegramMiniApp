@@ -9,8 +9,8 @@ load_dotenv()
 logging.basicConfig(format='%(asctime)s', level=logging.INFO)
 
 # آدرس JSONBin (رایگان)
-JSONBIN_API_KEY = os.getenv("JSONBIN_API_KEY", "")
-JSONBIN_URL = f"https://api.jsonbin.io/v3/b/your_bin_id/latest"  # عوض کن
+JSONBIN_API_KEY = os.getenv("$2a$10$F8VmD7JVotSYHhXT1SKvYOCfgT4AYl9yfeXlAAHyqYJpPQFVspcDu", "")
+JSONBIN_URL = f"https://api.jsonbin.io/v3/b/6a7672c0f5f4af5e29f9ced8/latest"  # عوض کن
 MINI_APP_URL = os.getenv('MINI_APP_URL', 'http://localhost:5000')
 
 QUESTIONS = [
